@@ -23,7 +23,8 @@ View(bd)
 library(ggplot2)
 library(dplyr)
 library(caret)
-
+library(RColorBrewer)
+library(forcats)
 
 # Analise Exploratória ####
 
@@ -31,7 +32,16 @@ library(caret)
 str(bd)
 summary(bd)
 
+# Variável Preditora
+
+bd$income <- case_when(bd$income == ' <=50K' ~ 0,
+               bd$income == ' >50K' ~ 1,
+               bd$income == ' <=50K.' ~ 0,
+               bd$income == ' >50K.' ~ 1,
+               TRUE ~ 2)
+
 # Gráficos
+# Histograma
 hist <- ggplot(bd, aes(x = age)) +
         geom_histogram(color = 'white', fill = 'aquamarine4', binwidth = 2) +
         theme(panel.background = element_blank()) +
@@ -48,18 +58,52 @@ hist
 # Nesse caso, as variáveis numéricas precisam ser normalizadas. 
 # Como temos mais de uma, a técnica deve ser aplicada para todas.
 
+# Análise Escolaridade
+colunas <- ggplot(bd) +
+           geom_bar(aes(x = fct_infreq(education), 
+                        fill = as.factor(income))) +
+           labs(x = element_blank(),
+                y = 'Quantidade',
+                title = ' Variável Income x Escolaridade') +
+           theme(panel.background = element_blank(),
+                 legend.title = element_text('Income'))
+           
+
+colunas + scale_fill_manual(values = c('azure4', 'aquamarine4'))
+
+# Vemos que High School é a principal categoria
+# O nível da escolaridade pode sim influenciar a renda, a maioria das pessoas om doutorado ganham mais de 50K
+
+# Análise raça
+colunas_raca <- ggplot(bd) +
+  geom_bar(aes(x = fct_infreq(race), 
+               fill = as.factor(income))) +
+  labs(x = element_blank(),
+       y = 'Quantidade',
+       title = ' Variável Income x Raça') +
+  theme(panel.background = element_blank())
+
+colunas_raca + scale_fill_manual(values = c('deepskyblue', 'cyan4'))
+
+# Outro ponto que chama atenção é a raça, onde brancos tendem a ganhar mais que as outras raças
+
+# Análise sexo
+colunas_sexo <- ggplot(bd) +
+  geom_bar(aes(x = fct_infreq(sex), 
+               fill = as.factor(income))) +
+  labs(x = element_blank(),
+       y = 'Quantidade',
+       title = ' Variável Income x Raça') +
+  theme(panel.background = element_blank())
+
+colunas_sexo + scale_fill_manual(values = c('deepskyblue', 'cyan4'))
+
+# Homens tendem a ter uma renda maior que mulheres. 
+# As 3 variáveis analisadas tendem a ter uma importância considerável para o modelo.
 
 
-
-# Variável Preditora
-
-a <- case_when(bd$income == ' <=50K' ~ 0,
-               bd$income == ' >50K' ~ 1,
-               bd$income == ' <=50K.' ~ 0,
-               bd$income == ' >50K.' ~ 1,
-               TRUE ~ 2)
-
-round(prop.table(table(a))*100,2)
+# Classes variável target
+round(prop.table(table(bd$income))*100,2)
 # O dataset possui 76% com pessoas ganhando menos de 50K
 # Temos 16% de pessoas ganhando mais de 50K
 
@@ -87,6 +131,12 @@ round((sum(ifelse(bd$occupation == ' ?', 1, 0))/nrow(bd))*100,2)
 
 
 # Pré - Processamento ####
+bd_modelo <- bd
+
+# Remoção variável com mais registros inválidos
+bd_modelo <- bd_modelo[bd_modelo$occupation != ' ?',]
+
+
 dmy <- dummyVars(" ~ .", data = dat, fullRank = T)
 dat_transformed <- data.frame(predict(dmy, newdata = dat))
 
