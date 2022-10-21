@@ -25,6 +25,9 @@ library(dplyr)
 library(caret)
 library(RColorBrewer)
 library(forcats)
+library(ROCR) 
+library(e1071)
+library(performanceEstimation)
 
 # Analise Exploratória ####
 
@@ -34,11 +37,11 @@ summary(bd)
 
 # Variável Preditora
 
-bd$income <- case_when(bd$income == ' <=50K' ~ 0,
-               bd$income == ' >50K' ~ 1,
-               bd$income == ' <=50K.' ~ 0,
-               bd$income == ' >50K.' ~ 1,
-               TRUE ~ 2)
+bd$income <- case_when(bd$income == ' <=50K' ~ '<=50K',
+               bd$income == ' >50K' ~ '>50K',
+               bd$income == ' <=50K.' ~ '<=50K',
+               bd$income == ' >50K.' ~ '>50K',
+               TRUE ~ 'NA')
 
 # Gráficos
 # Histograma
@@ -61,7 +64,7 @@ hist
 # Análise Escolaridade
 colunas <- ggplot(bd) +
            geom_bar(aes(x = fct_infreq(education), 
-                        fill = as.factor(income))) +
+                        fill = income)) +
            labs(x = element_blank(),
                 y = 'Quantidade',
                 title = ' Variável Income x Escolaridade') +
@@ -77,7 +80,7 @@ colunas + scale_fill_manual(values = c('azure4', 'aquamarine4'))
 # Análise raça
 colunas_raca <- ggplot(bd) +
   geom_bar(aes(x = fct_infreq(race), 
-               fill = as.factor(income))) +
+               fill = income)) +
   labs(x = element_blank(),
        y = 'Quantidade',
        title = ' Variável Income x Raça') +
@@ -90,7 +93,7 @@ colunas_raca + scale_fill_manual(values = c('deepskyblue', 'cyan4'))
 # Análise sexo
 colunas_sexo <- ggplot(bd) +
   geom_bar(aes(x = fct_infreq(sex), 
-               fill = as.factor(income))) +
+               fill = income)) +
   labs(x = element_blank(),
        y = 'Quantidade',
        title = ' Variável Income x Raça') +
@@ -127,26 +130,121 @@ round((sum(ifelse(bd$occupation == ' ?', 1, 0))/nrow(bd))*100,2)
 # 5,75% dos dados estão com ? em occupation. 
 # A decisão será melhor remover esses dados no pré-processamento
 
-
-
-
 # Pré - Processamento ####
 bd_modelo <- bd
 
 # Remoção variável com mais registros inválidos
 bd_modelo <- bd_modelo[bd_modelo$occupation != ' ?',]
+str(bd_modelo)
 
+bd_dmy <- bd_modelo[,-15]
 
-dmy <- dummyVars(" ~ .", data = dat, fullRank = T)
-dat_transformed <- data.frame(predict(dmy, newdata = dat))
+# Criação de variáveis dummy
 
-glimpse(dat_transformed)
+dmy <- dummyVars(" ~ .", data = bd_dmy, fullRank = T)
+dat_modelo <- data.frame(predict(dmy, newdata = bd_dmy))
+
+View(dat_modelo)
+
+bd_final <- dat_modelo
+bd_final['income'] <- bd_modelo[,15]
+bd_final['income'] <- case_when(bd_final$income == '<=50K' ~ '0',
+                                bd_final$income == '>50K' ~ '1',
+                                TRUE ~ '0')
 
 # https://www.pluralsight.com/guides/encoding-data-with-r
 
+# Remoção variável education.num
+bd_final['education.num'] <- NULL
+
+#Já existe uma variável que trata da escolaridade dos participantes da pesquisa
+
+# Função para normalização dos dados
+bd_final[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
+    scale(
+      bd_final[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')])
+
+# Divisão em Dados de treino e teste
+amostra_dados <- sample(x = nrow(bd_final),
+                        size = 0.8 * nrow(bd_final),
+                        replace = FALSE)
+
+# Dados de treino e teste
+bd_treino <- bd_final[amostra_dados,]
+bd_teste <- bd_final[-amostra_dados,]
+
+# Balanceamento de classes com SMOTE
+
+
+# Gráfico Antes do Balanceamento
+colunas_income <- ggplot(bd_treino) +
+  geom_bar(aes(x = income)) +
+  labs(x = 'Classe Income',
+       y = 'Quantidade',
+       title = 'Análise Variável Income') +
+  theme(panel.background = element_blank())
+
+colunas_income
+table(bd_treino$income)
+
+df_treino_modelo <- smote(income ~ ., 
+                                 bd_treino,
+                                 perc.over = 10,
+                                 perc.under = 2000)
+
+table(bd_treino$income)
+
+round(prop.table(table(bd_treino$income))*100,2)
+
+# https: https://www.statology.org/smote-in-r/
+
+
+
+
+
+
 # Modelo de Classificação ####
 
+# Modelo v1.0 - Regressão Logística
 
+
+# Feature Selection
+formula <- "income ~ ."
+formula <- as.formula(formula)
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 2)
+model <- train(formula, data = bd_treino_modelo, method = "glm", trControl = control)
+importance <- varImp(model, scale = FALSE)
+
+# Plot
+plot(importance)
+
+# Modelo v2.0 - Regressão Logística
+
+
+# Modelo v2.1 - Árvore de Decisão
+
+# Modelo v2.2 - RandomForest
+
+
+
+# Com a análise das variáveis com maior importância, a melhor alternatica é filtrar as melhores no modelo final
 
 # Resultados Finais ####
 
+
+# Função para Plot ROC 
+plot.roc.curve <- function(predictions, title.text){
+  perf <- performance(predictions, "tpr", "fpr")
+  plot(perf,col = "black",lty = 1, lwd = 2,
+       main = title.text, cex.main = 0.6, cex.lab = 0.8,xaxs = "i", yaxs = "i")
+  abline(0,1, col = "red")
+  auc <- performance(predictions,"auc")
+  auc <- unlist(slot(auc, "y.values"))
+  auc <- round(auc,2)
+  legend(0.4,0.4,legend = c(paste0("AUC: ",auc)), cex = 0.6, bty = "n", box.col = "white")
+  
+}
+
+# Plot
+par(mfrow = c(1, 2))
+plot.roc.curve(previsoes_finais, title.text = "Curva ROC")
