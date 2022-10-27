@@ -9,6 +9,8 @@ getwd()
 # O objetivo da análise é prever quem pode ter uma renda > ou <= $50K
 # Essa análise tem como objetivo retornar uma acurácia de 90%
 
+# Dicionário de Dados
+
 # fonte: https://archive.ics.uci.edu/ml/datasets/adult
 
 # Carga dos datasets ####
@@ -16,6 +18,8 @@ getwd()
 bd1 <- read.csv('adult_train.csv') #32.561 registros
 bd2 <- read.csv('adult_test.csv') # 16.281 registros
 bd <- rbind(bd1, bd2) #48.842 registros
+
+rm(bd1, bd2)
 View(bd)
 
 # Carga dos pacotes ####
@@ -27,7 +31,6 @@ library(RColorBrewer)
 library(forcats)
 library(ROCR) 
 library(e1071)
-library(performanceEstimation)
 
 # Analise Exploratória ####
 
@@ -135,11 +138,20 @@ bd_modelo <- bd
 
 # Remoção variável com mais registros inválidos
 bd_modelo <- bd_modelo[bd_modelo$occupation != ' ?',]
+
+# Label da variável target
+bd_modelo['income'] <- case_when(bd_modelo$income == '<=50K' ~ 0,
+                                bd_modelo$income == '>50K' ~ 1,
+                                TRUE ~ 0)
+
+# Remoção variável education.num
+#Já existe uma variável que trata da escolaridade dos participantes da pesquisa
+bd_modelo['education.num'] <- NULL
 str(bd_modelo)
 
-bd_dmy <- bd_modelo[,-15]
-
 # Criação de variáveis dummy
+
+bd_dmy <- bd_modelo[,-15]
 
 dmy <- dummyVars(" ~ .", data = bd_dmy, fullRank = T)
 dat_modelo <- data.frame(predict(dmy, newdata = bd_dmy))
@@ -147,17 +159,22 @@ dat_modelo <- data.frame(predict(dmy, newdata = bd_dmy))
 View(dat_modelo)
 
 bd_final <- dat_modelo
-bd_final['income'] <- bd_modelo[,15]
-bd_final['income'] <- case_when(bd_final$income == '<=50K' ~ '0',
-                                bd_final$income == '>50K' ~ '1',
-                                TRUE ~ '0')
+bd_final['income'] <- bd_modelo[,14]
+
+
+#Usar csv para balancear classes com Python
+# Motivos de muitos bugs com SMOTE em R
+write.csv2(bd_final, 'BD_modelo.csv', row.names = FALSE) 
 
 # https://www.pluralsight.com/guides/encoding-data-with-r
 
-# Remoção variável education.num
-bd_final['education.num'] <- NULL
+# Carga do dataset balanceado
+df_modelo <- read.csv('df_final.csv') #32.561 registros
 
-#Já existe uma variável que trata da escolaridade dos participantes da pesquisa
+# Dataset está balanceado
+round(prop.table(table(bd$income))*100,2)
+
+
 
 # Função para normalização dos dados
 bd_final[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
@@ -187,26 +204,28 @@ colunas_income <- ggplot(bd_treino) +
 colunas_income
 table(bd_treino$income)
 
-df_treino_modelo <- smote(income ~ ., 
-                                 bd_treino,
-                                 perc.over = 10,
-                                 perc.under = 2000)
+df_treino_modelo <- ovun.sample(income ~ ., 
+                                data = bd_treino, 
+                                method = "over", 
+                                N = 54000)
+df_treino <- df_treino_modelo$data
 
-table(bd_treino$income)
+# JOGAR DADOS PARA PYTHON E DEPOIS R DE NOVO
 
-round(prop.table(table(bd_treino$income))*100,2)
+table(df_treino$income)
 
-# https: https://www.statology.org/smote-in-r/
+round(prop.table(table(df_treino$income))*100,2)
 
+# Dataset de treino está balanceado e pronto para a modelagem preditiva
 
-
-
-
+# https://www.r-bloggers.com/2021/05/class-imbalance-handling-imbalanced-data-in-r/
 
 # Modelo de Classificação ####
 
 # Modelo v1.0 - Regressão Logística
+modelo_v1 <- glm(formula = income ~ ., data = df_treino, family = 'binomial')
 
+  
 
 # Feature Selection
 formula <- "income ~ ."
