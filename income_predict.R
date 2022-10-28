@@ -161,81 +161,60 @@ View(dat_modelo)
 bd_final <- dat_modelo
 bd_final['income'] <- bd_modelo[,14]
 
-
 #Usar csv para balancear classes com Python
 # Motivos de muitos bugs com SMOTE em R
-write.csv2(bd_final, 'BD_modelo.csv', row.names = FALSE) 
+write.csv2(bd_final, 'BD_modelo.csv', row.names = FALSE)
+nomes <- colnames(bd_final)
 
 # https://www.pluralsight.com/guides/encoding-data-with-r
 
 # Carga do dataset balanceado
-df_modelo <- read.csv('df_final.csv') #32.561 registros
+df_modelo <- read.csv('df_final.csv') #69.222 registros
+colnames(df_modelo) <- nomes
 
-# Dataset está balanceado
 round(prop.table(table(bd$income))*100,2)
-
-
+# Dataset está balanceado
 
 # Função para normalização dos dados
-bd_final[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
+df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
     scale(
-      bd_final[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')])
+      df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')])
 
 # Divisão em Dados de treino e teste
-amostra_dados <- sample(x = nrow(bd_final),
-                        size = 0.8 * nrow(bd_final),
+amostra_dados <- sample(x = nrow(df_modelo),
+                        size = 0.8 * nrow(df_modelo),
                         replace = FALSE)
 
 # Dados de treino e teste
-bd_treino <- bd_final[amostra_dados,]
-bd_teste <- bd_final[-amostra_dados,]
+bd_treino <- df_modelo[amostra_dados,]
+bd_teste <- df_modelo[-amostra_dados,]
 
-# Balanceamento de classes com SMOTE
-
-
-# Gráfico Antes do Balanceamento
-colunas_income <- ggplot(bd_treino) +
-  geom_bar(aes(x = income)) +
-  labs(x = 'Classe Income',
-       y = 'Quantidade',
-       title = 'Análise Variável Income') +
-  theme(panel.background = element_blank())
-
-colunas_income
-table(bd_treino$income)
-
-df_treino_modelo <- ovun.sample(income ~ ., 
-                                data = bd_treino, 
-                                method = "over", 
-                                N = 54000)
-df_treino <- df_treino_modelo$data
-
-# JOGAR DADOS PARA PYTHON E DEPOIS R DE NOVO
-
-table(df_treino$income)
-
-round(prop.table(table(df_treino$income))*100,2)
-
-# Dataset de treino está balanceado e pronto para a modelagem preditiva
-
-# https://www.r-bloggers.com/2021/05/class-imbalance-handling-imbalanced-data-in-r/
+# Remove a varíavel target para teste do modelo
+bd_teste_ml <- bd_teste[,-97] #Usar para teste do modelo!
 
 # Modelo de Classificação ####
 
 # Modelo v1.0 - Regressão Logística
-modelo_v1 <- glm(formula = income ~ ., data = df_treino, family = 'binomial')
+modelo_v1 <- glm(formula = income ~ ., data = bd_treino, family = 'binomial')
 
-  
+# Cálculo das probilidades de regressão
+resultado_v1 <- predict(modelo_v1, newdata = bd_teste_ml, type = 'response') 
+
+#Variável resposta com valores convertidos em binário
+resultado_v1 <- ifelse(resultado_v1 > 0.5, 1, 0) 
+
+confusionMatrix(table(data = resultado_v1, reference = bd_teste$income))
 
 # Feature Selection
 formula <- "income ~ ."
 formula <- as.formula(formula)
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 2)
-model <- train(formula, data = bd_treino_modelo, method = "glm", trControl = control)
+model <- train(formula, data = bd_treino, method = "glm", trControl = control)
 importance <- varImp(model, scale = FALSE)
 
 # Plot
-plot(importance)
+A <- importance$importance %>% arrange(desc(Overall)) %>% top_n(30) 
+A
 
 # Modelo v2.0 - Regressão Logística
 
