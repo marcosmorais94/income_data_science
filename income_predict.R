@@ -31,6 +31,8 @@ library(RColorBrewer)
 library(forcats)
 library(ROCR) 
 library(e1071)
+library(rpart)
+library(randomForest)
 
 # Analise Exploratória ####
 
@@ -172,7 +174,7 @@ nomes <- colnames(bd_final)
 df_modelo <- read.csv('df_final.csv') #69.222 registros
 colnames(df_modelo) <- nomes
 
-round(prop.table(table(bd$income))*100,2)
+round(prop.table(table(df_modelo$income))*100,2)
 # Dataset está balanceado
 
 # Função para normalização dos dados
@@ -203,7 +205,8 @@ resultado_v1 <- predict(modelo_v1, newdata = bd_teste_ml, type = 'response')
 #Variável resposta com valores convertidos em binário
 resultado_v1 <- ifelse(resultado_v1 > 0.5, 1, 0) 
 
-confusionMatrix(table(data = resultado_v1, reference = bd_teste$income))
+Modelo_1 <- confusionMatrix(table(data = resultado_v1, reference = bd_teste$income))
+Modelo_1
 
 # Feature Selection
 formula <- "income ~ ."
@@ -212,18 +215,51 @@ control <- trainControl(method = "repeatedcv", number = 10, repeats = 2)
 model <- train(formula, data = bd_treino, method = "glm", trControl = control)
 importance <- varImp(model, scale = FALSE)
 
-# Plot
+# Top20 Variáveis de maior importância
 A <- importance$importance %>% arrange(desc(Overall)) %>% top_n(30) 
 A
 
+top_var <- c('income ~ education.HS.grad + relationship.Not.in.family + relationship.Unmarried +
+             education.Some.college + relationship.Own.child + occupation.Craft.repair +
+             occupation.Machine.op.inspct + relationship.Other.relative + occupation.Other.service +
+             education.7th.8th + education.11th + occupation.Transport.moving +
+             education.Assoc.voc + occupation.Farming.fishing + occupation.Handlers.cleaners +
+             education.Assoc.acdm + education.9th + workclass.Self.emp.not.inc + workclass.State.gov +
+             education.Bachelors + occupation.Sales + workclass.Private + capital.gain +
+             hours.per.week + education.5th.6th + education.12th + workclass.Local.gov +
+             education.1st.4th + age')
+top_var <- as.formula(top_var)
+
 # Modelo v2.0 - Regressão Logística
+modelo_v2 <- glm(formula = top_var, data = bd_treino, family = 'binomial')
+
+# Cálculo das probilidades de regressão
+resultado_v2 <- predict(modelo_v2, newdata = bd_teste_ml, type = 'response') 
+
+#Variável resposta com valores convertidos em binário
+resultado_v2 <- ifelse(resultado_v2 > 0.5, 1, 0) 
+
+Modelo_2 <- confusionMatrix(table(data = resultado_v2, reference = bd_teste$income))
+Modelo_2
 
 
-# Modelo v2.1 - Árvore de Decisão
+# Modelo v3.0 - Regressão Logística usando 10 variáveis
+top_var2 <- c('income ~ education.HS.grad + relationship.Not.in.family + relationship.Unmarried +
+             education.Some.college + relationship.Own.child + occupation.Craft.repair +
+             occupation.Machine.op.inspct + relationship.Other.relative + occupation.Other.service +
+             education.7th.8th + education.11th')
+modelo_v3 <- glm(formula = top_var2, data = bd_treino, family = 'binomial')
 
-# Modelo v2.2 - RandomForest
+# Cálculo das probilidades de regressão
+resultado_v3 <- predict(modelo_v3, newdata = bd_teste_ml, type = 'response') 
 
+#Variável resposta com valores convertidos em binário
+resultado_v3 <- ifelse(resultado_v2 > 0.5, 1, 0) 
 
+Modelo_3 <- confusionMatrix(table(data = resultado_v3, reference = bd_teste$income))
+Modelo_3
+Modelo_2
+Modelo_1
 
 # Com a análise das variáveis com maior importância, a melhor alternatica é filtrar as melhores no modelo final
 
