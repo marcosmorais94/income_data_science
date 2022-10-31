@@ -219,6 +219,9 @@ importance <- varImp(model, scale = FALSE)
 A <- importance$importance %>% arrange(desc(Overall)) %>% top_n(30) 
 A
 
+# Com a análise das variáveis com maior importância, a melhor alternatica pode ser filtrar as melhores no modelo final.
+# Para isso, é necessário rodar algumas versões do modelo e comparar entre si.
+
 top_var <- c('income ~ education.HS.grad + relationship.Not.in.family + relationship.Unmarried +
              education.Some.college + relationship.Own.child + occupation.Craft.repair +
              occupation.Machine.op.inspct + relationship.Other.relative + occupation.Other.service +
@@ -257,14 +260,21 @@ resultado_v3 <- predict(modelo_v3, newdata = bd_teste_ml, type = 'response')
 resultado_v3 <- ifelse(resultado_v2 > 0.5, 1, 0) 
 
 Modelo_3 <- confusionMatrix(table(data = resultado_v3, reference = bd_teste$income))
-Modelo_3
-Modelo_2
-Modelo_1
 
-# Com a análise das variáveis com maior importância, a melhor alternatica é filtrar as melhores no modelo final
+# Modelo v3.0 - Regressão Logística usando 10 variáveis
+top_var3 <- c('income ~ education.HS.grad + relationship.Not.in.family + relationship.Unmarried +
+             education.Some.college + relationship.Own.child')
+modelo_v4 <- glm(formula = top_var3, data = bd_treino, family = 'binomial')
+
+# Cálculo das probilidades de regressão
+resultado_v4 <- predict(modelo_v4, newdata = bd_teste_ml, type = 'response') 
+
+#Variável resposta com valores convertidos em binário
+resultado_v4 <- ifelse(resultado_v4 > 0.5, 1, 0) 
+
+Modelo_4 <- confusionMatrix(table(data = resultado_v4, reference = bd_teste$income))
 
 # Resultados Finais ####
-
 
 # Função para Plot ROC 
 plot.roc.curve <- function(predictions, title.text){
@@ -279,6 +289,29 @@ plot.roc.curve <- function(predictions, title.text){
   
 }
 
+# Previsões com o modelo
+previsoes_v1 <- prediction(resultado_v1, bd_teste[,97])
+previsoes_v2 <- prediction(resultado_v2, bd_teste[,97])
+previsoes_v3 <- prediction(resultado_v3, bd_teste[,97])
+
 # Plot
-par(mfrow = c(1, 2))
-plot.roc.curve(previsoes_finais, title.text = "Curva ROC")
+par(mfrow = c(1, 3))
+plot.roc.curve(previsoes_v1, title.text = "Curva ROC")
+plot.roc.curve(previsoes_v2, title.text = "Curva ROC")
+plot.roc.curve(previsoes_v3, title.text = "Curva ROC")
+
+# Comparação da Confusion Matrix dos 4 modelos de regressão
+Modelo_1
+Modelo_2
+Modelo_3
+Modelo_4
+
+# Os 4 modelos apresentaram um bom resultado, com uma acurácia acima de 80%, contudo o modelo 1 teve o melhor desempenho.
+# Além da acurácia do Modelo 1, indicadores como Sensitivy (Verdadeiro POsitivo) e Sensibility (Falso)
+# Outro ponto também é o Kappa que teve uma performance melhor no Modelo 1
+
+# As curvas ROCS mostram que realmente o Modelo 1 teve um melhor desempenho.
+
+#Por conta de performance, não foi possível rodar outros algoritmos com esse dataset
+# Diante disso, será feitos mais testes agora com Pyhton no Jupyter Notebook.
+
