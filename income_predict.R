@@ -7,7 +7,7 @@ getwd()
 
 # O dataset foi feito a partir de uma pesquisa nacional em 1994 nos E.U.A
 # O objetivo da análise é prever quem pode ter uma renda > ou <= $50K
-# Essa análise tem como objetivo retornar uma acurácia de 90%
+# Essa análise tem como objetivo retornar uma acurácia de 80%
 
 # Dicionário de Dados
 
