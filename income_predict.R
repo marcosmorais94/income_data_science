@@ -312,6 +312,7 @@ Modelo_4
 
 # As curvas ROCS mostram que realmente o Modelo 1 teve um melhor desempenho.
 
-#Por conta de performance, não foi possível rodar outros algoritmos com esse dataset
+# Por conta de performance, não foi possível rodar outros algoritmos com esse dataset
 # Diante disso, será feitos mais testes agora com Pyhton no Jupyter Notebook.
 
+# Com base nas variáveis do dataset, temos 89% de precisão ao determinar se uma pessoa terá ou não uma renda superior a 50K
