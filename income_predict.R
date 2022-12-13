@@ -7,7 +7,7 @@ getwd()
 
 # O dataset foi feito a partir de uma pesquisa nacional em 1994 nos E.U.A
 # O objetivo da análise é prever quem pode ter uma renda > ou <= $50K
-# Essa análise tem como objetivo retornar uma acurácia de 80%
+# Essa análise tem como objetivo retornar uma acurácia de 90%
 
 # Dicionário de Dados
 
@@ -18,8 +18,6 @@ getwd()
 bd1 <- read.csv('adult_train.csv') #32.561 registros
 bd2 <- read.csv('adult_test.csv') # 16.281 registros
 bd <- rbind(bd1, bd2) #48.842 registros
-
-rm(bd1, bd2)
 View(bd)
 
 # Carga dos pacotes ####
@@ -31,8 +29,7 @@ library(RColorBrewer)
 library(forcats)
 library(ROCR) 
 library(e1071)
-library(rpart)
-library(randomForest)
+library(performanceEstimation)
 
 # Analise Exploratória ####
 
@@ -140,20 +137,11 @@ bd_modelo <- bd
 
 # Remoção variável com mais registros inválidos
 bd_modelo <- bd_modelo[bd_modelo$occupation != ' ?',]
-
-# Label da variável target
-bd_modelo['income'] <- case_when(bd_modelo$income == '<=50K' ~ 0,
-                                bd_modelo$income == '>50K' ~ 1,
-                                TRUE ~ 0)
-
-# Remoção variável education.num
-#Já existe uma variável que trata da escolaridade dos participantes da pesquisa
-bd_modelo['education.num'] <- NULL
 str(bd_modelo)
 
-# Criação de variáveis dummy
-
 bd_dmy <- bd_modelo[,-15]
+
+# Criação de variáveis dummy
 
 dmy <- dummyVars(" ~ .", data = bd_dmy, fullRank = T)
 dat_modelo <- data.frame(predict(dmy, newdata = bd_dmy))
@@ -161,14 +149,17 @@ dat_modelo <- data.frame(predict(dmy, newdata = bd_dmy))
 View(dat_modelo)
 
 bd_final <- dat_modelo
-bd_final['income'] <- bd_modelo[,14]
+bd_final['income'] <- bd_modelo[,15]
+bd_final['income'] <- case_when(bd_final$income == '<=50K' ~ '0',
+                                bd_final$income == '>50K' ~ '1',
+                                TRUE ~ '0')
+
+# https://www.pluralsight.com/guides/encoding-data-with-r
 
 #Usar csv para balancear classes com Python
 # Motivos de muitos bugs com SMOTE em R
 write.csv2(bd_final, 'BD_modelo.csv', row.names = FALSE)
 nomes <- colnames(bd_final)
-
-# https://www.pluralsight.com/guides/encoding-data-with-r
 
 # Carga do dataset balanceado
 df_modelo <- read.csv('df_final.csv') #69.222 registros
@@ -177,10 +168,14 @@ colnames(df_modelo) <- nomes
 round(prop.table(table(df_modelo$income))*100,2)
 # Dataset está balanceado
 
+
+# Remoção variável education.num
+bd_final['education.num'] <- NULL
+
 # Função para normalização dos dados
 df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
-    scale(
-      df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')])
+  scale(
+    df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')])
 
 # Divisão em Dados de treino e teste
 amostra_dados <- sample(x = nrow(df_modelo),
@@ -192,7 +187,7 @@ bd_treino <- df_modelo[amostra_dados,]
 bd_teste <- df_modelo[-amostra_dados,]
 
 # Remove a varíavel target para teste do modelo
-bd_teste_ml <- bd_teste[,-97] #Usar para teste do modelo!
+bd_teste_ml <- bd_teste[,-98] #Usar para teste do modelo!
 
 # Modelo de Classificação ####
 
