@@ -156,6 +156,9 @@ bd_final['income'] <- case_when(bd_final$income == '<=50K' ~ '0',
 
 # https://www.pluralsight.com/guides/encoding-data-with-r
 
+# Remoção variável education.num
+bd_final['education.num'] <- NULL
+
 #Usar csv para balancear classes com Python
 # Motivos de muitos bugs com SMOTE em R
 write.csv2(bd_final, 'BD_modelo.csv', row.names = FALSE)
@@ -167,10 +170,6 @@ colnames(df_modelo) <- nomes
 
 round(prop.table(table(df_modelo$income))*100,2)
 # Dataset está balanceado
-
-
-# Remoção variável education.num
-bd_final['education.num'] <- NULL
 
 # Função para normalização dos dados
 df_modelo[c('age','fnlwgt','capital.gain','capital.loss','hours.per.week')] <- 
