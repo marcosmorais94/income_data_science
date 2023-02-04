@@ -13,30 +13,24 @@ Fonte do dataset: https://archive.ics.uci.edu/ml/datasets/adult
 
 | Atributo  | Descrição | Métrica |
 | ------------- | ------------- | ------------- |
-| age | Idade do entrevistado | Numérica  |
+| age | Idade do entrevistado | Numérico  |
 | workclass Cell  | Tipo de trabalho do entrevistado  |  Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked  |
-| fnlwgt  | Content Cell  | Numérico  |
+| fnlwgt  | Representa o peso da população que respondeu cada registro  | Numérico  |
 | education  | Escolaridade do entrevistado  | Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool  |
 | education-num  | Número escolaridade do entrevistado | Numérico  |
 | marital-status  | Estado Civil do entrevistado | Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse  |
-| Content Cell  | Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  | Content Cell  |
-
-- : .
-- occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, - - Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
-- relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
-- race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
-- sex: Female, Male.
-- capital-gain: continuous.
-- capital-loss: continuous.
-- hours-per-week: continuous.
-- native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
-
-Variável Target
-- Income: Duas classes com <= 50K e > 50K
+| occupation  | Cargo do entrevistado  | Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, - - Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces  |
+| relationship  | Relacionamento | Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried  |
+| race  | Raça  | White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black  |
+| sex  | Gênero | Female, Male  |
+| capital-gain  | Ganho de capital  | Numérico  |
+| capital-loss  | Perda de capital  | Numérico  |
+| hours-per-week  | Horas trabalhadas por semana  | Numérico |
+| native-country  | Nacionalidade  | United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands  |
+| Income  | Classe da renda  | Duas classes com <= 50K e > 50K  |
 
 Informações do Dataset
-- Total de Registros: 48.842
-- Total de Atributos: 15
+|   |  |
+| ------------- | ------------- |
+| Total de Registros  | 48.842  |
+| Total de Atributos  | 15  |
